@@ -21,6 +21,6 @@ int insert(char*s,node** list);
 
 int rimozione(char *s,node** ht);
 
-#endif
+void free_hashtable(node**ht);
 
-//free hash table
+#endif

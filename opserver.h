@@ -16,17 +16,18 @@ typedef struct{
     pthread_mutex_t lock;
 } data_server;
 
+data_server* create_dataserver();
+
+void free_data_server(data_server*);
+
 char* sv_connect(char* s,data_server*);
 
 int sv_store();
 
 void* sv_retrieve();
 
-int sv_delete();
+char* sv_delete();
 
-int sv_disconnect();
+char* sv_disconnect(char* s,data_server*);
 
 #endif
-
-// create server data e free server data
-//inizializzare le lock
