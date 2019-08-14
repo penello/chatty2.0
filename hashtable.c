@@ -8,6 +8,7 @@
 
 #ifndef _hashtable_c_
 #define _hashtable_c_
+
 #define BITS_IN_int     ( sizeof(int) * CHAR_BIT )
 #define THREE_QUARTERS  ((int) ((BITS_IN_int * 3) / 4))
 #define ONE_EIGHTH      ((int) (BITS_IN_int / 8))
@@ -19,6 +20,12 @@ node** createhashtable(){
     memset(ht,0,DIMHASHTABLE*sizeof(node*));
     return ht;
 }
+
+void free_hashtable(node** ht){
+    free(ht);
+}
+
+
 // la funzione di hashing è palesemente copiata dall'assegnamento 9
 unsigned int hash(char* s){
      char *datum = (char *)s;
