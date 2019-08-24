@@ -16,17 +16,19 @@ typedef struct{
     pthread_mutex_t lock;
 } data_server;
 
+extern data_server* stats;
+
 data_server* create_dataserver();
 
 void free_data_server(data_server*);
 
 char* sv_connect(char* s,data_server*);
 
-int sv_store();
+char* sv_store(char*s,char*objame,data_server* data,char* msg, unsigned int size_msg);
 
-void* sv_retrieve();
+char* sv_retrieve(char* s,char* objname);
 
-char* sv_delete();
+char* sv_delete(char* s,char* objname,data_server* data);
 
 char* sv_disconnect(char* s,data_server*);
 
