@@ -7,7 +7,7 @@
 #define BACKLOG 512
 #define DIRSTORE "store/"
 #define LENOBJ 101
-#define SOCKNAME "/tmp/objstore.sock"
+#define SOCKNAME "./objstore.sock"
 
 
 #define CHECKMALLOC(call) if((call)==NULL){ fprintf(stderr,"Error Malloc\n"); exit(EXIT_FAILURE);}
@@ -24,13 +24,15 @@
 
 #define CHECKSOCKET(call) if((call)==-1) fprintf(stdout,"Error create Socket\n");
 
+#define CHECKCONNECT(X) if((X)==-1) fprintf(stdout,"Error in socket connect\n");
+
 #define CHECKBIND(X) if((X)==-1) fprintf(stderr,"Error in bind\n");
 
 #define CHECKLISTEN(X) if((X)==-1) fprintf(stderr,"Error in socketlisten\n");
 
 #define CHECKLOCK(call,ret) if((call)!=0) { fprintf(stderr,"lock failed\n"); return ret; }
 
-#define CHECKACCEPT(call) if((call)==-1) fprintf(stderr,"Error in accetp connection\n");
+#define CHECKACCEPT(call) if((call)==-1) fprintf(stderr,"Error in accept connection\n");
 
 #define CHECKUNLOCK(call) if((call)!=0) fprintf(stderr,"unlock failed\n");
 

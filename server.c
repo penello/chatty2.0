@@ -18,15 +18,19 @@
 #define _server_c
 
 
-int dispatcher(int socket_sv){
+
+
+int dispatcher(int socket_sv,connections* stats){
 
     pthread_t thd;
-    int n_client[BACKLOG];
     int i=0;
-
+    fprintf(stdout,"aspetto connessioni\n");
     while(i<BACKLOG){
-        CHECKACCEPT(n_client[i]=accept(socket_sv,NULL,NULL));
-        CHECKTHREAD(pthread_create(&(thd),NULL,&worker,n_client+i));
+        CHECKACCEPT((stats->fd)=accept(socket_sv,NULL,NULL));
+        fprintf(stdout,"mi sono connesso con un client\n");
+        printf("%d\n",stats->fd);
+        CHECKTHREAD(pthread_create(&thd,NULL,&worker,stats));
+        fprintf(stdout,"ho fatto il thread per la comunicazione\n");
         i++;
     }
     return 0;
@@ -38,22 +42,36 @@ int dispatcher(int socket_sv){
 
 
 
+
 int main(int argc,char* argv[]){
    
     fprintf(stdout,"inizializzo server\n");
 
-    stats=create_dataserver();
+    connections* stats;
+    CHECKMALLOC(stats=malloc(sizeof(connections)));
+    memset(stats,0,sizeof(connections));
+    stats->sv_stats=create_dataserver();
+    fprintf(stdout,"creato data server\n");
+
 
     struct sockaddr_un sock;
     sock.sun_family=AF_UNIX;
     strncpy(sock.sun_path,SOCKNAME,108);
+
+    fprintf(stdout,"provo la socket\n");
+
 
     int socket_sv=0;
     CHECKSOCKET(socket_sv=socket(AF_UNIX,SOCK_STREAM,0));
     CHECKBIND(bind(socket_sv,(struct sockaddr*)&sock,sizeof(sock)));
     CHECKLISTEN(listen(socket_sv,BACKLOG));
 
-    dispatcher(socket_sv);
+    fprintf(stdout,"sono in listen\n");
+
+
+    dispatcher(socket_sv,stats);
+
+    free_data_server(stats->sv_stats);
 
     return 0;
 }

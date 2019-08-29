@@ -15,6 +15,15 @@
 #ifndef _threadworker_h_
 #define _threadworker_h
 
-static void* worker(void* arg);
+
+void leave(int fd,char*s,connections* stats,int* stop);
+
+void _delete(int fd,char*s,connections* stats,int* stop);
+
+void store(int fd,char*s,connections* stats,int*stop);
+
+void retrive(int fd,char*s,int* stop);
+
+void* worker(void* arg);
 
 #endif

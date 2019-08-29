@@ -41,9 +41,12 @@ int main() {
     free(big);*/
 
     char* name;
-    char* temp="REGISTER Mariooo\n cioccolata";
-    name=temp+9;
-    name=strtok(name," ");
+    char* delim="\n";
+    char temp[80]="REGISTER Mariooo\n cioccolata";
+    name=temp;
+    //name=strtok(name," ");
+    name=strtok(name,delim);
+    name=strtok(NULL," ");
     printf("%s",name);
 
     return 0;

@@ -16,7 +16,6 @@ typedef struct{
     pthread_mutex_t lock;
 } data_server;
 
-extern data_server* stats;
 
 data_server* create_dataserver();
 

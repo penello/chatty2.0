@@ -13,6 +13,12 @@
 #ifndef _server_h
 #define _server_h
 
+typedef struct{
+    data_server* sv_stats;
+    int fd;
+}connections;
 
+
+int dispatcher(int socket_sv,connections* stats);
 
 #endif
