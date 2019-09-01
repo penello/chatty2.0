@@ -22,6 +22,14 @@ node** createhashtable(){
 }
 
 void free_hashtable(node** ht){
+    for(int i=0;i<DIMHASHTABLE;i++){
+        node* corr=ht[i];
+        while(corr!=NULL){
+            node* tmp=corr;
+            corr=corr->next;
+            free(tmp);
+        }
+    }
     free(ht);
 }
 

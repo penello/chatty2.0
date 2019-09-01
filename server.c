@@ -8,57 +8,107 @@
 #include<pthread.h>
 #include<sys/socket.h>
 #include<sys/types.h>
+#include<sys/stat.h>
 #include<sys/un.h>
 #include<sys/poll.h>
 #include"server.h"
 #include"threadworker.h"
+#include<signal.h>
+#include<unistd.h>
+
 
 
 #ifndef _server_c
 #define _server_c
 
+data_server* data;
+volatile sig_atomic_t Sig;
 
-
-
-int dispatcher(int socket_sv,connections* stats){
-
-    pthread_t thd;
-    int i=0;
-    fprintf(stdout,"aspetto connessioni\n");
-    while(i<BACKLOG){
-        CHECKACCEPT((stats->fd)=accept(socket_sv,NULL,NULL));
-        fprintf(stdout,"mi sono connesso con un client\n");
-        printf("%d\n",stats->fd);
-        CHECKTHREAD(pthread_create(&thd,NULL,&worker,stats));
-        fprintf(stdout,"ho fatto il thread per la comunicazione\n");
-        i++;
-    }
-    return 0;
-
+void sighandler(int sig){
+    Sig=sig;
 }
 
+void stampastat(){
+    CHECKLOCK1(pthread_mutex_lock(&(data->lock)));
+    printf("Size totale degli oggetti dello store:%u\n",(data->size_objstore));
+    printf("Numero client connessi:%u\n",(data->n_client_objstore));
+    printf("Numero oggetti nello store:%u\n",(data->n_obj_objstore));
+    CHECKLOCK1(pthread_mutex_unlock(&(data->lock)));
+}
+
+void sethandler(){
+    struct sigaction sigterm;
+    struct sigaction sigint;
+    struct sigaction sigusr1;
+    struct sigaction sigpipe;
+
+    memset(&sigterm,0,sizeof(struct sigaction));
+    memset(&sigint,0,sizeof(struct sigaction));
+    memset(&sigusr1,0,sizeof(struct sigaction));
+    memset(&sigpipe,0,sizeof(struct sigaction));
+
+    sigpipe.sa_handler=SIG_IGN;
+    sigterm.sa_handler=sighandler;
+    sigint.sa_handler=sighandler;
+    sigusr1.sa_handler=sighandler;
 
 
+    SIG_ACTION(SIGPIPE,sigpipe);
+    SIG_ACTION(SIGINT,sigint);
+    SIG_ACTION(SIGUSR1,sigusr1);
+    SIG_ACTION(SIGTERM,sigterm);
+}
 
+int dispatcher(int socket_sv,pthread_t* thd){
 
+    
+    int i=0;
+    int k=0;
+    while(i<BACKLOG){
+        connections* stats;
+        if((k=accept(socket_sv,NULL,NULL))==-1){
+            fprintf(stderr,"Error in accept connection\n");
+        }
+        else {
+            CHECKMALLOC(stats=malloc(sizeof(connections)));
+            memset(stats,0,sizeof(connections));
+            stats->fd=k;
+            stats->sv_stats=data;
+            CHECKTHREAD(pthread_create(&thd[i],NULL,&worker,stats));
+            i++;
+        }
+        if(Sig==SIGINT){
+            fprintf(stderr,"Server received a SIGINT\n");
+            return i;
+        }
+        else if(Sig==SIGTERM){
+            fprintf(stderr,"Server received a SIGTERM\n");
+            return i;
+        }
+        else if(Sig==SIGUSR1){
+            fprintf(stderr,"Server received a SIGUSR1\n");
+            stampastat();
+            Sig=0;
+        }
+    }
+    return i;
+}
 
 
 int main(int argc,char* argv[]){
    
+
     fprintf(stdout,"inizializzo server\n");
 
-    connections* stats;
-    CHECKMALLOC(stats=malloc(sizeof(connections)));
-    memset(stats,0,sizeof(connections));
-    stats->sv_stats=create_dataserver();
-    fprintf(stdout,"creato data server\n");
+    sethandler();
 
-
+    data=create_dataserver();
+    pthread_t* thd;
+    CHECKMALLOC(thd=malloc(BACKLOG*sizeof(pthread_t)));
+    memset(thd,0,BACKLOG*sizeof(pthread_t));
     struct sockaddr_un sock;
     sock.sun_family=AF_UNIX;
     strncpy(sock.sun_path,SOCKNAME,108);
-
-    fprintf(stdout,"provo la socket\n");
 
 
     int socket_sv=0;
@@ -66,12 +116,15 @@ int main(int argc,char* argv[]){
     CHECKBIND(bind(socket_sv,(struct sockaddr*)&sock,sizeof(sock)));
     CHECKLISTEN(listen(socket_sv,BACKLOG));
 
-    fprintf(stdout,"sono in listen\n");
+    mkdir("Store",0777);
+    chdir("Store");
 
-
-    dispatcher(socket_sv,stats);
-
-    free_data_server(stats->sv_stats);
+    int n=dispatcher(socket_sv,thd);
+    for(int i=0;i<n;i++){
+        pthread_join(thd[i],NULL);
+    }
+    free(thd);
+    free_data_server(data);
 
     return 0;
 }

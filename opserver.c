@@ -31,7 +31,10 @@ data_server* create_dataserver(){
 
 
 void free_data_server(data_server* stat_server){
+    free(stat_server->hashlocks);
+    free_hashtable(stat_server->client_connessi);
     free(stat_server);
+    
 }
 
 
@@ -53,14 +56,11 @@ char* sv_connect(char*s,data_server* data){
 
     if(esito==-1) return "KO Name already taken\n";
     else{
-
-        char* directory=NULL;
-        CHECKMALLOC(directory=malloc(256*sizeof(char)));
-        strncpy(directory,DIRSTORE,256);
-        strncat(directory,s,(256-sizeof(DIRSTORE)));
-        int flag=chdir(directory);
-        if(flag==-1){
-        CHECKMKDIR(mkdir(directory,0700));
+        if (mkdir(s,0777) == -1) {
+		    if (errno != EEXIST) {
+			    perror("worker creating directory");
+			    pthread_exit(NULL);
+		    }
         }
         CHECKLOCK(pthread_mutex_lock(&(data->lock)),"KO fail\n");
         (data->n_client_objstore)++;
@@ -92,32 +92,29 @@ char* sv_disconnect(char* s, data_server* data){
 char* sv_delete(char* s,char* objname,data_server* data){
     FILE* fp;
     unsigned int size=0;
-    char* obj_name=NULL;
-    CHECKMALLOC(obj_name=malloc(LENOBJ*sizeof(char)));
-    memset(obj_name,0,LENOBJ*sizeof(char));
-    strncpy(obj_name,objname,LENOBJ);
-    char* directory=NULL;
-    CHECKMALLOC(directory=malloc(256*sizeof(char)));
-    memset(directory,0,256*sizeof(char));
-
-    strncpy(directory,DIRSTORE,256);
-    strncat(directory,s,(256-sizeof(DIRSTORE)));
-    strncat(directory,"/",(256-sizeof(DIRSTORE)-1));
-    strncat(directory,obj_name,((256-sizeof(DIRSTORE)-(sizeof(s)-1))));
-
-    fp=fopen(directory,"r");
+    int len=strlen(s);
+    char path[LENNAME];
+    strncpy(path,s,50);
+    path[len]='/';
+    strncat(path,objname,50);
+    
+    fp=fopen(path,"r");
     if(fp==NULL){
         fprintf(stderr,"File not present\n");
-        printf("%s\n",directory);
+        printf("%s\n",path);
         return "KO File not present\n";
     }
     else{
         fseek(fp,0,SEEK_END);
         size=ftell(fp);
         CHECKFCLOSE(fclose(fp));
-        CHECKREMOVEFILE(remove(directory));
-        free(obj_name);
-        free(directory);
+        int ok=0;
+        ok=unlink(path);
+        if(ok==-1){
+            fprintf(stderr,"File not present\n");
+            printf("%s\n",path);
+            return "KO File not present\n";
+        }
         CHECKLOCK(pthread_mutex_lock(&(data->lock)),"KO fail\n");
         (data->n_obj_objstore)--;
         (data->size_objstore)=(data->size_objstore)-size;
@@ -130,87 +127,56 @@ char* sv_delete(char* s,char* objname,data_server* data){
 
 char* sv_store(char*s,char*objname,data_server* data,char* msg, unsigned int size_msg){
 
-    fprintf(stdout,"sono nella store\n");
     
     FILE* fp;
-    fp=malloc(sizeof(FILE*));
+    fp=NULL;
     FILE* wr;
-    wr=malloc(sizeof(FILE*));
-    char* obj_name=NULL;
-    CHECKMALLOC(obj_name=malloc(LENOBJ*sizeof(char)));
-    memset(obj_name,0,LENOBJ*sizeof(char));
-    strncpy(obj_name,objname,LENOBJ);
-    char* path_fileame=NULL;
-    CHECKMALLOC(path_fileame=malloc(256*sizeof(char)));
-    memset(path_fileame,0,256*sizeof(char));
+    wr=NULL;
 
-    fprintf(stdout,"dopo un po' di malloc\n");
+    int len=strlen(s);
+    char path[LENNAME];
+    strncpy(path,s,50);
+    path[len]='/';
+    strncat(path,objname,50);
 
-    strncpy(path_fileame,DIRSTORE,256);
-    strncat(path_fileame,s,(256-sizeof(DIRSTORE)));
-    strncat(path_fileame,"/",(256-sizeof(DIRSTORE)-1));
-    strncat(path_fileame,obj_name,((256-sizeof(DIRSTORE)-(sizeof(s)-1))));
-
-    fprintf(stdout,"faccio la fopen\n");
-
-    fp=fopen(path_fileame,"r");
+    fp=fopen(path,"r");
     if(fp!=NULL){
         fprintf(stderr,"File name already present\n");
+        CHECKFCLOSE(fclose(fp));
         return "KO file name already present\n";
     }
     else{
 
-        wr=fopen(path_fileame,"w");
+        wr=fopen(path,"w");
         if(wr==NULL){
             fprintf(stderr,"Error in create file\n");
             return "KO error in create file\n";
         }
         else{
-            fprintf(stdout,"faccio la fwrite\n");
-            printf("\nroba della store%s\n%s\n%s\n%s\n%u\n",s,objname,msg,path_fileame,size_msg);
-
             fwrite(msg,sizeof(char),size_msg,wr);
             CHECKFCLOSE(fclose(wr));
 
-            fprintf(stdout,"faccio la fclose\n");
-
-            free(obj_name);
-            free(path_fileame);
-
-            fprintf(stdout,"dopo free prima di lock\n");
 
             CHECKLOCK(pthread_mutex_lock(&(data->lock)),"KO fail\n");
             (data->n_obj_objstore)++;
             (data->size_objstore)=(data->size_objstore)+size_msg;
             CHECKUNLOCK(pthread_mutex_unlock(&(data->lock)));
 
-            fprintf(stdout,"dopo lock\n");
-
             return "OK \n";
         }
-
-
     }
-
 }
 
 char* sv_retrieve(char* s,char* objname){
     FILE* fp;
     unsigned int size=0;
-    char* obj_name=NULL;
-    CHECKMALLOC(obj_name=malloc(LENOBJ*sizeof(char)));
-    memset(obj_name,0,LENOBJ*sizeof(char));
-    strncpy(obj_name,objname,LENOBJ);
-    char* directory=NULL;
-    CHECKMALLOC(directory=malloc(256*sizeof(char)));
-    memset(directory,0,256*sizeof(char));
+    int len=strlen(s);
+    char path[LENNAME];
+    strncpy(path,s,50);
+    path[len]='/';
+    strncat(path,objname,50);
 
-    strncpy(directory,DIRSTORE,256);
-    strncat(directory,s,(256-sizeof(DIRSTORE)));
-    strncat(directory,"/",(256-sizeof(DIRSTORE)-1));
-    strncat(directory,obj_name,((256-sizeof(DIRSTORE)-(sizeof(s)-1))));
-
-    fp=fopen(directory,"r");
+    fp=fopen(path,"r");
     if(fp==NULL){
         fprintf(stderr,"File not present\n");
         return "KO File not present\n";
@@ -226,9 +192,9 @@ char* sv_retrieve(char* s,char* objname){
         char* return_data=NULL;
         CHECKMALLOC(return_data=malloc(100100*sizeof(char)));
         memset(return_data,0,100100*sizeof(char));
-        strncpy(return_data,"DATA ",100100);
-        strncat(return_data,data_size,100090);
-        strncat(return_data," \n ",100080);
+        strncpy(return_data,"DATA ",6);
+        strncat(return_data,data_size,16);
+        strncat(return_data," \n ",4);
         char ch;
         unsigned int i=0;
         char* temp=NULL;
@@ -240,8 +206,6 @@ char* sv_retrieve(char* s,char* objname){
         }
         strncat(return_data,temp,100050);
         CHECKFCLOSE(fclose(fp));
-        free(obj_name);
-        free(directory);
         free(data_size);
         free(temp);
         return return_data;

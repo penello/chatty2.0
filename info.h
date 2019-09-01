@@ -1,12 +1,11 @@
 #ifndef _info_h_
 #define _info_h_
 
-#define LENNAME 101
+#define LENNAME 108
 #define DIMHASHTABLE 1024
 #define N_LOCK 128
 #define BACKLOG 512
-#define DIRSTORE "store/"
-#define LENOBJ 101
+#define LENOBJ 108
 #define SOCKNAME "./objstore.sock"
 
 
@@ -32,12 +31,14 @@
 
 #define CHECKLOCK(call,ret) if((call)!=0) { fprintf(stderr,"lock failed\n"); return ret; }
 
-#define CHECKACCEPT(call) if((call)==-1) fprintf(stderr,"Error in accept connection\n");
+#define CHECKLOCK1(call) if((call)!=0) { fprintf(stderr,"lock failed\n");}
 
 #define CHECKUNLOCK(call) if((call)!=0) fprintf(stderr,"unlock failed\n");
 
 #define CHECKREMOVEFILE(X) if((X)!=0){ fprintf(stderr,"Remove file:ERROR\n"); exit(EXIT_FAILURE);}
 
 #define CHECKFCLOSE(X) if((X)!=0) { fprintf(stderr,"Error in close file\n");}
+
+#define SIG_ACTION(SIG,X) if(sigaction(SIG,&X,NULL)==-1){perror("sigaction");}
 
 #endif

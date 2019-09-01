@@ -19,6 +19,6 @@ typedef struct{
 }connections;
 
 
-int dispatcher(int socket_sv,connections* stats);
+int dispatcher(int socket_sv,pthread_t*);
 
 #endif

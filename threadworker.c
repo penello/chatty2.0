@@ -42,9 +42,8 @@ void _delete(int fd,char*s,connections* stats,int* stop){
         }
         char* obj;
         char result[LENNAME];
-        obj=buff;
-        obj=strtok(obj," ");
-        obj=strtok(NULL," ");
+        obj=buff+6;
+        obj=strtok(obj, " ");
         strncpy(result,sv_delete(s,obj,(stats->sv_stats)),LENNAME);
         CHECKWRITE(write(fd,result,LENNAME));
 }
@@ -52,12 +51,8 @@ void _delete(int fd,char*s,connections* stats,int* stop){
 
 void store(int fd,char*s,connections* stats,int*stop){
 
-    fprintf(stdout,"Abbiamo una richiesta di store\n");
-
     char buff[100100];
     int a=0;
-
-    fprintf(stdout,"Vediamo se è una vera richiesta di store\n");
 
     CHECKREAD(a=read(fd,buff,100100));
     if(strncmp(buff,"TORE ",5)!=0 || strlen(buff)<11){
@@ -66,9 +61,6 @@ void store(int fd,char*s,connections* stats,int*stop){
         return;
     }
     
-    fprintf(stdout,"inizializzo per la store\n");
-
-    printf("messaggio prima delle strtok:\n%s\n",buff);
 
     char* string;
     string=buff+5;
@@ -88,20 +80,12 @@ void store(int fd,char*s,connections* stats,int*stop){
         *stop=1;
     }
     else{
-    printf("messaggio prima della chiamata a sv_store:\n%s\n",msg);
-
-    fprintf(stdout,"trasformo il len mex in unsigned int\n");
 
     unsigned int len_msg=strtoul(len,NULL,10);
 
-    char result[LENNAME];
-
-    fprintf(stdout,"trasformato il len mex in unsigned int\n");
-    
+    char result[LENNAME];    
 
     strncpy(result,sv_store(s,nameobj,(stats->sv_stats),msg,len_msg),LENNAME);
-
-    printf("%s STORE\n",result);
 
     CHECKWRITE(write(fd,result,LENNAME));
     }
@@ -124,7 +108,9 @@ void retrive(int fd,char*s,int* stop){
     name_obj=strtok(name_obj," ");
 
     char result[100100];
-    strncpy(result,sv_retrieve(s,name_obj),LENNAME);
+    char* ret=sv_retrieve(s,name_obj);
+    strncpy(result,ret,LENNAME);
+    free(ret);
     CHECKWRITE(write(fd,result,LENNAME));
 
 }
@@ -137,8 +123,6 @@ void* worker(connections* stats){
     char result[LENNAME];
     int a=0;
 
-    fprintf(stdout,"adesso leggo la richiesta\n");
-
     CHECKREAD(a=read(cs,temp,LENNAME));
     if(a==0){
         CHECKWRITE(write(cs,"KO during trasmission\n",LENNAME));
@@ -148,8 +132,6 @@ void* worker(connections* stats){
         CHECKWRITE(write(cs,"KO invalid registration message \n",LENNAME));
         pthread_exit(NULL);
     }
-
-    fprintf(stdout,"HO letto la richiesta ed è una register\n");
 
     char* name;
     name=temp+9;
@@ -162,8 +144,6 @@ void* worker(connections* stats){
         pthread_exit(NULL);
     }
     
-    printf("%s REGISTER\n",result);
-
     CHECKWRITE(write(cs,result,LENNAME));
 
     char s;
@@ -185,8 +165,7 @@ void* worker(connections* stats){
         }
     }
 
-    fprintf(stdout,"Chiudo comunicazione\n");
     close(cs);
+    free(stats);
     pthread_exit(NULL);
-    
 }

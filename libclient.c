@@ -39,7 +39,7 @@ int os_connect(char* name){
     if(strncmp(buff,"OK \n",LENNAME)==0){
         return 1;
     }
-    else if(strncmp(buff,"KO ",3)==0){
+    else{
         close(socket_cl);
         return 0;
     }
@@ -68,10 +68,8 @@ int os_store(char *name, void *block, size_t len){
     if(strncmp(buff,"OK \n",LENNAME)==0){
         return 1;
     }
-    else if(strncmp(buff,"KO ",3)==0){
-        //close(socket_cl);
-        return 0;
-    }
+    else return 0;
+
 }
 
 void *os_retrieve(char *name){
@@ -87,19 +85,24 @@ void *os_retrieve(char *name){
     CHECKREAD(a=read(socket_cl,buff,100100));
 
     if(strncmp(buff,"DATA ",5)==0 && strlen(buff)>7){
-    char* string;
-    string=buff+5;
-    string=strtok(string," ");
-    char* len_msg=string;
-    string=strtok(NULL," ");
-    string=strtok(NULL,"/0");
-    return string;
+        char* string;
+        string=buff+5;
+    
+        char spazio[2]=" \0";
+        int i=0;
+        int count=0;
+        while(count!=2){
+            if(string[i]==spazio[0]){count++;}
+            i++;
+        }
+        char* msg;
+        msg=string+i;
+
+    return msg;
     }
-    else if(strncmp(buff,"KO ",3)==0){
-        //close(socket_cl);
-        return NULL;
-    }
+    else return NULL;
 }
+
 
 int os_delete(char *name){
     char op[LENNAME]="DELETE ";
@@ -117,10 +120,7 @@ int os_delete(char *name){
     if(strncmp(buff,"OK \n",LENNAME)==0){
         return 1;
     }
-    else if(strncmp(buff,"KO ",3)==0){
-        //close(socket_cl);
-        return 0;
-    }
+    else return 0;
 }
 
 int os_disconnect(){
