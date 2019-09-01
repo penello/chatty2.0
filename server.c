@@ -21,13 +21,17 @@
 #ifndef _server_c
 #define _server_c
 
+//dichiarazione della struct presente nell'omonimo file.h
 data_server* data;
+//variabile per la gestione dei segnali
 volatile sig_atomic_t Sig;
 
+//handler dei segnali
 void sighandler(int sig){
     Sig=sig;
 }
 
+//procedura che stampa le statistiche del server
 void stampastat(){
     CHECKLOCK1(pthread_mutex_lock(&(data->lock)));
     printf("Size totale degli oggetti dello store:%u\n",(data->size_objstore));
@@ -36,6 +40,7 @@ void stampastat(){
     CHECKLOCK1(pthread_mutex_unlock(&(data->lock)));
 }
 
+//procedura che inizializza correttamente gli handler dei segnali
 void sethandler(){
     struct sigaction sigterm;
     struct sigaction sigint;
@@ -59,8 +64,8 @@ void sethandler(){
     SIG_ACTION(SIGTERM,sigterm);
 }
 
+//funzione che cicla e per ogni richiesta di connessione crea un thread associato a un solo client
 int dispatcher(int socket_sv,pthread_t* thd){
-
     
     int i=0;
     int k=0;
@@ -74,7 +79,7 @@ int dispatcher(int socket_sv,pthread_t* thd){
             memset(stats,0,sizeof(connections));
             stats->fd=k;
             stats->sv_stats=data;
-            CHECKTHREAD(pthread_create(&thd[i],NULL,&worker,stats));
+            CHECKTHREAD(pthread_create(&thd[i],NULL,&worker,stats),k);
             i++;
         }
         if(Sig==SIGINT){
@@ -95,6 +100,7 @@ int dispatcher(int socket_sv,pthread_t* thd){
 }
 
 
+//main del server dove viene inizializzato e si mette in listen
 int main(int argc,char* argv[]){
    
 
@@ -116,8 +122,11 @@ int main(int argc,char* argv[]){
     CHECKBIND(bind(socket_sv,(struct sockaddr*)&sock,sizeof(sock)));
     CHECKLISTEN(listen(socket_sv,BACKLOG));
 
-    mkdir("Store",0777);
-    chdir("Store");
+    int q=mkdir("data",0777);
+    if(q<0){
+        exit(EXIT_FAILURE);
+    }
+    chdir("data");
 
     int n=dispatcher(socket_sv,thd);
     for(int i=0;i<n;i++){

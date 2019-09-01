@@ -13,6 +13,7 @@
 #include"server.h"
 #include<unistd.h>
 
+//controlla la validità della richiesta la esegue e torna l'esito al client
 void leave(int fd,char*s,connections* stats,int* stop){
     char buff[8];
     int a;
@@ -30,7 +31,7 @@ void leave(int fd,char*s,connections* stats,int* stop){
     }
 }
 
-
+//controlla la validità della richiesta la esegue e torna l'esito al client
 void _delete(int fd,char*s,connections* stats,int* stop){
     char buff[LENNAME];
     int a;
@@ -48,7 +49,7 @@ void _delete(int fd,char*s,connections* stats,int* stop){
         CHECKWRITE(write(fd,result,LENNAME));
 }
 
-
+//controlla la validità della richiesta la esegue e torna l'esito al client
 void store(int fd,char*s,connections* stats,int*stop){
 
     char buff[100100];
@@ -92,7 +93,7 @@ void store(int fd,char*s,connections* stats,int*stop){
 
 }
 
-
+//controlla la validità della richiesta la esegue e torna l'esito al client
 void retrive(int fd,char*s,int* stop){
     char buff[LENNAME];
     int a;
@@ -116,7 +117,7 @@ void retrive(int fd,char*s,int* stop){
 }
 
 
-
+//verifica che la prima operazione richiesta da un client sia una register e si mette in attesa di altre richieste
 void* worker(connections* stats){
     int cs=stats->fd;
     char temp[LENNAME];
@@ -126,10 +127,14 @@ void* worker(connections* stats){
     CHECKREAD(a=read(cs,temp,LENNAME));
     if(a==0){
         CHECKWRITE(write(cs,"KO during trasmission\n",LENNAME));
+        free(stats);
+        close(cs);        
         pthread_exit(NULL);
     }
     if(strncmp(temp,"REGISTER ",9)!=0 || strlen(temp)<12){
         CHECKWRITE(write(cs,"KO invalid registration message \n",LENNAME));
+        free(stats);
+        close(cs);
         pthread_exit(NULL);
     }
 
@@ -141,13 +146,15 @@ void* worker(connections* stats){
     if(strncmp(result,"OK \n",LENNAME)!=0){
         CHECKWRITE(write(cs,"KO an error occured in register request\n",LENNAME));
         close(cs);
+        free(stats);
         pthread_exit(NULL);
     }
     
     CHECKWRITE(write(cs,result,LENNAME));
 
-    char s;
+    char s=0;
     int stop=0;
+    int normalexit=0;
     while(read(cs,&s,1) && !stop){
         switch (s){
             case 'S':
@@ -161,10 +168,13 @@ void* worker(connections* stats){
                     break;
             case 'L':
                     leave(cs,name,stats,&stop);
+                    normalexit=1;
                     break;
         }
     }
-
+    if(!normalexit){
+        sv_disconnect(name,(stats->sv_stats));
+    }
     close(cs);
     free(stats);
     pthread_exit(NULL);

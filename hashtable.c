@@ -14,6 +14,7 @@
 #define ONE_EIGHTH      ((int) (BITS_IN_int / 8))
 #define HIGH_BITS       ( ~((unsigned int)(~0) >> ONE_EIGHTH ))
 
+//procedura per la creazione dell'hash table
 node** createhashtable(){
     node** ht=NULL;
     CHECKMALLOC(ht=malloc(DIMHASHTABLE*sizeof(node*)));
@@ -21,6 +22,7 @@ node** createhashtable(){
     return ht;
 }
 
+//procedura per la free dell'hash table
 void free_hashtable(node** ht){
     for(int i=0;i<DIMHASHTABLE;i++){
         node* corr=ht[i];
@@ -34,7 +36,7 @@ void free_hashtable(node** ht){
 }
 
 
-// la funzione di hashing è palesemente copiata dall'assegnamento 9
+// la funzione di hashing è presa dall'assegnamento 9
 unsigned int hash(char* s){
      char *datum = (char *)s;
     unsigned int hash_value, i;
@@ -49,7 +51,7 @@ unsigned int hash(char* s){
     return (hash_value)%DIMHASHTABLE;
 }
 
-
+//funzione per inserire nell'hash table
 int insert(char*s,node** ht){
     int index=hash(s);
     node* new=NULL;
@@ -77,6 +79,7 @@ int insert(char*s,node** ht){
     return 1;
 }
 
+//funzione per rimuovere dall'hash table
 int rimozione(char *s,node** ht){
     int index=hash(s);
     node* precc=NULL;

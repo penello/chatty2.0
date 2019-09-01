@@ -17,6 +17,7 @@
 #ifndef _libclient_c
 #define _libclient_c
 
+//funzione per connettere il client al server
 int os_connect(char* name){
     struct sockaddr_un sa;
 	strncpy(sa.sun_path, SOCKNAME, 108);
@@ -46,6 +47,7 @@ int os_connect(char* name){
 
 }
 
+//funzione per richiedere la store di un oggetto al server
 int os_store(char *name, void *block, size_t len){
     char op[100100]="STORE ";
     char msg_dim[10];
@@ -72,6 +74,7 @@ int os_store(char *name, void *block, size_t len){
 
 }
 
+//funzione per richiedere la retrieve di un oggetto al server
 void *os_retrieve(char *name){
     char op[LENNAME]="RETRIEVE ";
     strncat(op,name,50);
@@ -103,7 +106,7 @@ void *os_retrieve(char *name){
     else return NULL;
 }
 
-
+//funzione per richiedere la rimozione di un oggetto al server
 int os_delete(char *name){
     char op[LENNAME]="DELETE ";
     strncat(op,name,50);
@@ -123,6 +126,7 @@ int os_delete(char *name){
     else return 0;
 }
 
+//funzione che disconnette client e server
 int os_disconnect(){
     char op[LENNAME]="LEAVE \n";
     char* buff;

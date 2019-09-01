@@ -36,7 +36,7 @@ perm:
 
 clean:
 	@rm -f $(DEL) objstore.sock testout.log formtestout.log *~
-	@rm -rf Store
+	@rm -rf data
 
 test:
 	make all

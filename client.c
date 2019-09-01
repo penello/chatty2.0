@@ -16,6 +16,7 @@
 int succop=0;
 int optentate=0;
 
+//creo 20 oggetti di dimensione crescente per fare la store
 void store(){
     int i,j=0;
     int dim=100;
@@ -34,6 +35,7 @@ void store(){
     }
 }
 
+//controllo se la retrieve mi rimanda la stringa corretta
 void retrieve () {
 	int i, j = 0;
 	int dim = 100;
@@ -55,6 +57,7 @@ void retrieve () {
 	}
 }
 
+//elimino 20 oggetti
 void delete () {
 	int i;
 	char name[3];
@@ -65,6 +68,7 @@ void delete () {
 	}
 }
 
+//mi connetto al server e in base ai paramentri passati faccio l'operazione richiesta
 int main(int argc,char* argv[]){
     int test;
     char name[LENNAME]="\0";
@@ -100,7 +104,7 @@ int main(int argc,char* argv[]){
     optentate++;
     succop+= os_disconnect();
 
-    printf("\nTEST %d : %d successful operations on %d\n", test, succop, optentate);
+    printf("Test numero:%d\noperazioni tentate:%d\noperazioni con successo:%d\n", test, succop, optentate);
 	fflush(stdout);
 
 return 0;
